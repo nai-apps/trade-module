@@ -1,0 +1,524 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAI_Trade v1.0 — Навигатор Позиции и Средней</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTQiIGZpbGw9IiMwRTBFMEUiIHN0cm9rZT0iIzM4YmRmOCIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0iTTIwIDE2djMyTTQ0IDE2djMyTTIwIDMyaDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzOGJkZjgiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+">
+    <style>
+        body { background-color: #0E0E0E; color: #D5D5D5; font-family: 'Courier New', Courier, monospace; padding: 15px; max-width: 900px; margin: 0 auto; user-select: none; }
+        h1, h2 { color: #38bdf8; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 5px; font-size: 18px; }
+        .subtitle { color: #666; font-size: 12px; margin-bottom: 18px; }
+        .layout-grid { display: flex; gap: 20px; flex-wrap: wrap; }
+        .instruments-column { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .canvas-box { background-color: #141414; border: 2px solid #333; border-radius: 8px; padding: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; }
+        .canvas-title { font-size: 11px; color: #888; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        canvas { background-color: #111; border-radius: 4px; cursor: default; }
+        .control-panel { flex: 1; min-width: 300px; background-color: #141414; border: 2px solid #333; border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: space-between; }
+        .stats-box { background-color: #1A1A1A; border-left: 4px solid #38bdf8; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .stat-line { margin: 6px 0; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .value { color: #FFF; font-weight: bold; }
+        .interpretation { font-size: 13px; color: #D5D5D5; line-height: 1.4; }
+        .btn-reset { background-color: #222; color: #38bdf8; border: 1px solid #38bdf8; padding: 10px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 4px; transition: all 0.2s; text-align: center; margin-top: 8px; font-size: 12px; }
+        .btn-reset:hover { background-color: #38bdf8; color: #FFF; }
+        .input-field { background: #111; border: 1px solid #444; color: #fff; font-family: inherit; padding: 4px 6px; width: 85px; text-align: right; border-radius: 4px; font-size: 13px; }
+        .input-price { border-color: #eab308; color: #eab308; font-weight: bold; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .instruments-column, .canvas-box, .control-panel { width: 100%; min-width: 100%; box-sizing: border-box; }
+            canvas { max-width: 100%; height: auto; }
+        }
+    </style>
+</head>
+<body>
+        <h1>NAI: БИРЖЕВОЙ МОДУЛЬ v1.0</h1>
+    <div class="subtitle">Навигатор для позиционной торговли в среднесрок/долгосрок.</div>
+
+    <div class="layout-grid">
+        <div class="instruments-column">
+            <div class="canvas-box" style="border-color: #38bdf8;">
+                <div class="canvas-title">1. Авиагоризонт Коридора (Цена / Время)</div>
+                <canvas id="gyroCanvas" width="260" height="260"></canvas>
+            </div>
+            
+            <div class="canvas-box" style="border-color: #a855f7;">
+                <div class="canvas-title">2. Детальный Центроид (Сектора сил)</div>
+                <canvas id="balanceCanvas" width="260" height="260"></canvas>
+            </div>
+
+            <div class="canvas-box" style="border-color: #22c55e;">
+                <div class="canvas-title">3. Динамика Цены и Средняя (SMA)</div>
+                <canvas id="smaCanvas" width="260" height="110"></canvas>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <div>
+                <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Панель Управления</span>
+                    <button id="lockBtn" onclick="toggleLock()" title="Блокировка границ коридора" style="background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 14px; line-height: 1;"></button>
+                </h2>
+                
+                <div class="stats-box" style="border-left-color: #38bdf8;">
+                    <div class="interpretation" id="interpretText">Цена в центре коридора. Равновесие сил.</div>
+                </div>
+
+                <div class="stats-box" style="border-left-color: #eab308;">
+                    <div class="stat-line" style="font-weight: bold; color: #eab308;">
+                        <span>Текущая цена (Я):</span>
+                        <input type="number" step="0.01" id="cfgPrice" class="input-field input-price" value="100" onchange="updateFromInputs()">
+                    </div>
+                </div>
+
+                <div class="stats-box" style="border-left-color: #a855f7;">
+                    <div class="stat-line"> Цель (Потолок): 
+                        <input type="number" step="0.01" id="cfgTarget" class="input-field" value="120" onchange="updateFromInputs()">
+                    </div>
+                    <div class="stat-line"> Поддержка (Пол): 
+                        <input type="number" step="0.01" id="cfgSupport" class="input-field" value="80" onchange="updateFromInputs()">
+                    </div>
+                    <div class="stat-line"> Дней до события: 
+                        <input type="number" id="cfgDays" class="input-field" value="30" onchange="updateDaysStart()">
+                    </div>
+                </div>
+
+                <div class="stats-box" style="border-left-color: #ef4444;">
+                    <div class="stat-line">Позиция в коридоре: <span id="valPosPct" class="value">50.0%</span></div>
+                    <div class="stat-line">Запас до Цели: <span id="valToTarget" class="value">+20.00</span></div>
+                    <div class="stat-line">Активный сектор: <span id="valSector" class="value">ЦЕНТР (БАЛАНС)</span></div>
+                </div>
+            </div>
+            
+            <div id="btnReset" class="btn-reset" onclick="confirmReset()">СБРОС КОРИДОРА И ИСТОРИИ</div>
+        </div>
+    </div>
+    <script>
+        const gyroCanvas = document.getElementById('gyroCanvas');
+        const gCtx = gyroCanvas.getContext('2d');
+        const balCanvas = document.getElementById('balanceCanvas');
+        const bCtx = balCanvas.getContext('2d');
+        const smaCanvas = document.getElementById('smaCanvas');
+        const sCtx = smaCanvas.getContext('2d');
+
+        const radius = 110;
+        const cX = 130;
+        const cY = 130;
+
+        let pX = cX;
+        let pY = cY;
+
+        const vPrice = { x: cX, y: cY - radius };
+        const vSupport = { x: cX - radius * Math.sin(Math.PI/3), y: cY + radius * Math.cos(Math.PI/3) };
+        const vTarget = { x: cX + radius * Math.sin(Math.PI/3), y: cY + radius * Math.cos(Math.PI/3) };
+
+        function drawGyroscope(tiltAngle) {
+            gCtx.clearRect(0, 0, gyroCanvas.width, gyroCanvas.height);
+
+            gCtx.beginPath();
+            gCtx.arc(cX, cY, radius, Math.PI * 0.5, Math.PI * 1.5);
+            gCtx.fillStyle = 'rgba(239, 68, 68, 0.08)';
+            gCtx.fill();
+
+            gCtx.beginPath();
+            gCtx.arc(cX, cY, radius, -Math.PI * 0.5, Math.PI * 0.5);
+            gCtx.fillStyle = 'rgba(34, 197, 94, 0.08)';
+            gCtx.fill();
+
+            gCtx.beginPath();
+            gCtx.arc(cX, cY, radius, 0, 2 * Math.PI);
+            gCtx.strokeStyle = '#333';
+            gCtx.lineWidth = 2;
+            gCtx.stroke();
+
+            gCtx.beginPath();
+            gCtx.moveTo(cX, cY - radius);
+            gCtx.lineTo(cX, cY - radius + 12);
+            gCtx.strokeStyle = '#555';
+            gCtx.lineWidth = 2;
+            gCtx.stroke();
+
+            gCtx.font = "bold 11px Courier New";
+            gCtx.fillStyle = '#ef4444';
+            gCtx.fillText('П', 5, cY - 14);
+            gCtx.fillText('ПОДДЕРЖКА', 28, cY - 14);
+            gCtx.fillStyle = '#22c55e';
+            gCtx.fillText('ЦЕЛЬ', 205, cY - 14);
+            gCtx.fillText('Ц', 249, cY - 14);
+
+            gCtx.save();
+            gCtx.translate(cX, cY);
+            gCtx.rotate(tiltAngle);
+
+            gCtx.beginPath();
+            gCtx.moveTo(-radius + 15, 0);
+            gCtx.lineTo(radius - 15, 0);
+            gCtx.strokeStyle = tiltAngle < -0.02 ? '#ef4444' : (tiltAngle > 0.02 ? '#22c55e' : '#38bdf8');
+            gCtx.lineWidth = 3;
+            gCtx.stroke();
+
+            gCtx.beginPath();
+            gCtx.moveTo(0, 0);
+            gCtx.lineTo(0, -radius + 25);
+            gCtx.strokeStyle = '#FFF';
+            gCtx.lineWidth = 2;
+            gCtx.stroke();
+
+            gCtx.beginPath();
+            gCtx.moveTo(0, -radius + 18);
+            gCtx.lineTo(-5, -radius + 28);
+            gCtx.lineTo(5, -radius + 28);
+            gCtx.closePath();
+            gCtx.fillStyle = '#FFF';
+            gCtx.fill();
+
+            gCtx.font = "bold 15px Courier New";
+            gCtx.fillStyle = '#eab308';
+            gCtx.fillText('Я', -4, -radius + 14);
+
+            gCtx.beginPath();
+            gCtx.arc(0, 0, 5, 0, 2 * Math.PI);
+            gCtx.fillStyle = '#38bdf8';
+            gCtx.fill();
+
+            gCtx.restore();
+        }
+
+        function drawCentroid() {
+            bCtx.clearRect(0, 0, balCanvas.width, balCanvas.height);
+
+            bCtx.beginPath();
+            bCtx.moveTo(cX, cY);
+            bCtx.arc(cX, cY, radius, -Math.PI * 5/6, -Math.PI * 1/6);
+            bCtx.closePath();
+            bCtx.fillStyle = 'rgba(234, 179, 8, 0.09)';
+            bCtx.fill();
+
+            bCtx.beginPath();
+            bCtx.moveTo(cX, cY);
+            bCtx.arc(cX, cY, radius, -Math.PI * 1/6, Math.PI * 0.5);
+            bCtx.closePath();
+            bCtx.fillStyle = 'rgba(34, 197, 94, 0.09)';
+            bCtx.fill();
+
+            bCtx.beginPath();
+            bCtx.moveTo(cX, cY);
+            bCtx.arc(cX, cY, radius, Math.PI * 0.5, Math.PI * 7/6);
+            bCtx.closePath();
+            bCtx.fillStyle = 'rgba(239, 68, 68, 0.09)';
+            bCtx.fill();
+
+            bCtx.beginPath();
+            bCtx.arc(cX, cY, radius, 0, 2 * Math.PI);
+            bCtx.strokeStyle = '#333';
+            bCtx.lineWidth = 2;
+            bCtx.stroke();
+
+            bCtx.strokeStyle = '#222';
+            bCtx.lineWidth = 1;
+            const angles = [-Math.PI * 5/6, -Math.PI * 1/6, Math.PI * 0.5];
+            angles.forEach(a => {
+                bCtx.beginPath();
+                bCtx.moveTo(cX, cY);
+                bCtx.lineTo(cX + radius * Math.cos(a), cY + radius * Math.sin(a));
+                bCtx.stroke();
+            });
+
+            bCtx.lineWidth = 1.5;
+            bCtx.beginPath(); bCtx.moveTo(pX, pY); bCtx.lineTo(vPrice.x, vPrice.y); bCtx.strokeStyle = '#eab308'; bCtx.stroke();
+            bCtx.beginPath(); bCtx.moveTo(pX, pY); bCtx.lineTo(vSupport.x, vSupport.y); bCtx.strokeStyle = '#ef4444'; bCtx.stroke();
+            bCtx.beginPath(); bCtx.moveTo(pX, pY); bCtx.lineTo(vTarget.x, vTarget.y); bCtx.strokeStyle = '#22c55e'; bCtx.stroke();
+
+            bCtx.font = "bold 10px Courier New";
+            bCtx.fillStyle = '#eab308'; bCtx.fillText(' ЦЕНА (Я)', cX - 30, 14);
+            bCtx.fillStyle = '#ef4444'; bCtx.fillText(' ПОДДЕРЖКА', 10, balCanvas.height - 8);
+            bCtx.fillStyle = '#22c55e'; bCtx.fillText(' ЦЕЛЬ', balCanvas.width - 52, balCanvas.height - 8);
+
+            bCtx.beginPath();
+            bCtx.arc(pX, pY, 7, 0, 2 * Math.PI);
+            bCtx.fillStyle = '#FFF';
+            bCtx.shadowBlur = 10;
+            bCtx.shadowColor = '#38bdf8';
+            bCtx.fill();
+            bCtx.shadowBlur = 0;
+        }
+
+        function drawSMA(currentVal) {
+            if (!sCtx) return;
+            let today = new Date().toISOString().slice(0, 10);
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem('nai_trade1_sma_hist') || '[]');
+            } catch (e) {}
+
+            if (history.length > 0 && history[history.length - 1].date === today) {
+                history[history.length - 1].val = currentVal;
+            } else {
+                history.push({ date: today, val: currentVal });
+                if (history.length > 14) history.shift();
+            }
+
+            try {
+                localStorage.setItem('nai_trade1_sma_hist', JSON.stringify(history));
+            } catch (e) {}
+
+            const w = smaCanvas.width;
+            const h = smaCanvas.height;
+            sCtx.clearRect(0, 0, w, h);
+
+            if (history.length === 1) {
+                history = [{ date: 'start', val: currentVal }, history[0]];
+            }
+
+            let smaList = [];
+            for (let i = 0; i < history.length; i++) {
+                let start = Math.max(0, i - 2);
+                let sum = 0;
+                for (let j = start; j <= i; j++) sum += history[j].val;
+                smaList.push(sum / (i - start + 1));
+            }
+
+            let allVals = history.map(d => d.val).concat(smaList);
+            let minVal = Math.min(...allVals);
+            let maxVal = Math.max(...allVals);
+            if (minVal === maxVal) { minVal -= 1; maxVal += 1; }
+
+            const pad = 16;
+            const getX = (idx) => pad + (idx / (history.length - 1)) * (w - pad * 2);
+            const getY = (v) => (h - pad) - ((v - minVal) / (maxVal - minVal)) * (h - pad * 2);
+
+            sCtx.strokeStyle = '#666';
+            sCtx.lineWidth = 1.5;
+            sCtx.beginPath();
+            history.forEach((pt, idx) => {
+                let x = getX(idx), y = getY(pt.val);
+                if (idx === 0) sCtx.moveTo(x, y); else sCtx.lineTo(x, y);
+            });
+            sCtx.stroke();
+
+            sCtx.strokeStyle = '#38bdf8';
+            sCtx.lineWidth = 2.5;
+            sCtx.beginPath();
+            smaList.forEach((v, idx) => {
+                let x = getX(idx), y = getY(v);
+                if (idx === 0) sCtx.moveTo(x, y); else sCtx.lineTo(x, y);
+            });
+            sCtx.stroke();
+
+            let lastX = getX(smaList.length - 1);
+            let lastY = getY(smaList[smaList.length - 1]);
+            sCtx.fillStyle = '#38bdf8';
+            sCtx.beginPath();
+            sCtx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+            sCtx.fill();
+
+            sCtx.fillStyle = '#888';
+            sCtx.font = '10px sans-serif';
+            sCtx.fillText('Сессий в базе: ' + history.length + ' (SMA-3)', 8, 12);
+        }
+
+        function recalculateAll() {
+            const price = parseFloat(document.getElementById('cfgPrice').value) || 0;
+            const target = parseFloat(document.getElementById('cfgTarget').value) || 0;
+            const support = parseFloat(document.getElementById('cfgSupport').value) || 0;
+            const days = parseFloat(document.getElementById('cfgDays').value) || 1;
+
+            let span = target - support;
+            if (span <= 0) span = 1;
+
+            let posRatio = (price - support) / span;
+            let posPct = (posRatio * 100).toFixed(1) + "%";
+            let toTarget = (target - price).toFixed(2);
+
+            document.getElementById('valPosPct').innerText = posPct;
+            document.getElementById('valPosPct').style.color = posRatio < 0.45 ? "#ef4444" : (posRatio > 0.55 ? "#22c55e" : "#FFF");
+            document.getElementById('valToTarget').innerText = (target - price >= 0 ? "+" : "") + toTarget;
+
+            let norm = (posRatio - 0.5) * 2;
+            let tiltAngle = Math.atan(norm * 1.4);
+
+            if (norm < 0) {
+                let timeRatio = (30 - Math.min(days, 30)) / 30;
+                let timeAccel = Math.pow(timeRatio, 1.8);
+                let downWeight = Math.sqrt(Math.min(1, Math.abs(norm)));
+                let maxRad = 1.52;
+                tiltAngle -= (maxRad - Math.abs(tiltAngle)) * downWeight * timeAccel;
+            }
+            tiltAngle = Math.max(-1.55, Math.min(1.55, tiltAngle));
+
+            let clamped = Math.max(0, Math.min(1, posRatio));
+            let wTarget = clamped * 100;
+            let wSupport = (1 - clamped) * 100;
+            let wPrice = 45 + (1 - Math.abs(posRatio - 0.5) * 2) * 35;
+
+            let totalMass = wTarget + wSupport + wPrice;
+            let targetX = (vTarget.x * wTarget + vSupport.x * wSupport + vPrice.x * wPrice) / totalMass;
+            let targetY = (vTarget.y * wTarget + vSupport.y * wSupport + vPrice.y * wPrice) / totalMass;
+
+            const dist = Math.hypot(targetX - cX, targetY - cY);
+            if (dist <= radius - 8) {
+                pX = targetX; pY = targetY;
+            } else {
+                const angle = Math.atan2(targetY - cY, targetX - cX);
+                pX = cX + (radius - 8) * Math.cos(angle);
+                pY = cY + (radius - 8) * Math.sin(angle);
+            }
+
+            let sectorName = "ЦЕНТР (БАЛАНС)";
+            let advice = "Цена в середине коридора. Наблюдаем за смещением средней (SMA).";
+
+            if (price < support) {
+                sectorName = "ПРОБОЙ ПОДДЕРЖКИ";
+                advice = "Внимание: цена ушла ниже уровня Поддержки! Сценарий роста нарушен.";
+            } else if (price >= target) {
+                sectorName = "ДОСТИЖЕНИЕ ЦЕЛИ";
+                advice = "Цена достигла верхней границы коридора. Зона фиксации результата.";
+            } else if (dist > 10) {
+                let deg = Math.atan2(pY - cY, pX - cX) * (180 / Math.PI);
+                if (deg >= -150 && deg < -30) {
+                    sectorName = "ЗОНА РАВНОВЕСИЯ (ЦЕНА)";
+                    advice = "Консолидация в рабочей зоне. Без резких движений, ждём вектор SMA.";
+                } else if (deg >= -30 && deg < 90) {
+                    sectorName = "ЗОНА РОСТА (К ЦЕЛИ)";
+                    advice = "Покупатели контролируют коридор. Цена уверенно движется к Цели.";
+                } else {
+                    sectorName = "ЗОНА ДАВЛЕНИЯ (ПОДДЕРЖКА)";
+                    advice = "Цена прижата к нижней границе. Время до события работает против позиции.";
+                }
+            }
+
+            document.getElementById('valSector').innerText = sectorName;
+            document.getElementById('interpretText').innerText = advice;
+
+            try {
+                localStorage.setItem('nai_trade1_price', price);
+                localStorage.setItem('nai_trade1_target', target);
+                localStorage.setItem('nai_trade1_support', support);
+                localStorage.setItem('nai_trade1_days', days);
+            } catch (e) {}
+
+            drawGyroscope(tiltAngle);
+            drawCentroid();
+            drawSMA(price);
+        }
+
+        let isLocked = false;
+
+                function renderLockState() {
+            const btn = document.getElementById('lockBtn');
+            const inputs = [
+                document.getElementById('cfgPrice'),
+                document.getElementById('cfgTarget'),
+                document.getElementById('cfgSupport'),
+                document.getElementById('cfgDays')
+            ];
+
+            inputs.forEach(inp => {
+                if (inp) {
+                    inp.disabled = isLocked;
+                    inp.style.opacity = isLocked ? '0.5' : '1';
+                }
+            });
+
+            const resetBtn = document.getElementById('btnReset');
+            if (resetBtn) {
+                resetBtn.style.opacity = isLocked ? '0.45' : '1';
+                resetBtn.style.pointerEvents = isLocked ? 'none' : 'auto';
+            }
+
+            if (btn) {
+                btn.style.borderColor = isLocked ? '#ef4444' : '#22c55e';
+                btn.style.color = isLocked ? '#ef4444' : '#22c55e';
+                btn.innerHTML = isLocked
+                    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+                    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-1.8"/></svg>';
+            }
+        }
+
+        function toggleLock() {
+            isLocked = !isLocked;
+            try {
+                localStorage.setItem('nai_trade1_locked', isLocked ? '1' : '0');
+            } catch (e) {}
+            renderLockState();
+        }
+
+        function syncCountdownDays(needRecalc) {
+            try {
+                let baseDays = localStorage.getItem('nai_trade1_days_base');
+                let startTs = localStorage.getItem('nai_trade1_days_start');
+                if (baseDays !== null && startTs !== null) {
+                    let passedDays = Math.floor((Date.now() - parseInt(startTs)) / 86400000);
+                    let leftDays = Math.max(0, parseInt(baseDays) - passedDays);
+                    let dInput = document.getElementById('cfgDays');
+                    if (dInput && parseInt(dInput.value) !== leftDays) {
+                        dInput.value = leftDays;
+                        if (needRecalc) recalculateAll();
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function updateFromInputs() {
+            recalculateAll();
+        }
+
+        function updateDaysStart() {
+            let d = parseInt(document.getElementById('cfgDays').value) || 0;
+            try {
+                localStorage.setItem('nai_trade1_days_base', d);
+                localStorage.setItem('nai_trade1_days_start', Date.now());
+            } catch (e) {}
+            recalculateAll();
+        }
+
+        function confirmReset() {
+            if (isLocked) return;
+            if (confirm("Сбросить границы коридора и очистить историю цены?")) {
+                resetToCenter();
+            }
+        }
+
+        function resetToCenter() {
+            document.getElementById('cfgPrice').value = "100";
+            document.getElementById('cfgTarget').value = "120";
+            document.getElementById('cfgSupport').value = "80";
+            document.getElementById('cfgDays').value = "30";
+            try {
+                localStorage.removeItem('nai_trade1_price');
+                localStorage.removeItem('nai_trade1_target');
+                localStorage.removeItem('nai_trade1_support');
+                localStorage.removeItem('nai_trade1_days');
+                localStorage.removeItem('nai_trade1_days_base');
+                localStorage.removeItem('nai_trade1_days_start');
+                localStorage.removeItem('nai_trade1_sma_hist');
+            } catch (e) {}
+            recalculateAll();
+        }
+
+        function initApp() {
+            try {
+                let sP = localStorage.getItem('nai_trade1_price');
+                let sT = localStorage.getItem('nai_trade1_target');
+                let sS = localStorage.getItem('nai_trade1_support');
+                let sLock = localStorage.getItem('nai_trade1_locked');
+
+                if (sP !== null) document.getElementById('cfgPrice').value = sP;
+                if (sT !== null) document.getElementById('cfgTarget').value = sT;
+                if (sS !== null) document.getElementById('cfgSupport').value = sS;
+                if (sLock === '1') isLocked = true;
+
+                syncCountdownDays(false);
+            } catch (e) {}
+            renderLockState();
+            recalculateAll();
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) syncCountdownDays(true);
+        });
+        setInterval(() => syncCountdownDays(true), 60000);
+
+        initApp();
+    </script>
+</body>
+</html>
