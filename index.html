@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -345,12 +345,30 @@
             }
             tiltAngle = Math.max(-1.55, Math.min(1.55, tiltAngle));
 
+                        let timePressure = 0;
+            if (norm < 0) {
+                let urgency = (31 - Math.min(days, 30)) / 30;
+                timePressure = Math.abs(norm) * 100 * urgency * 1.6;
+            }
+
             let clamped = Math.max(0, Math.min(1, posRatio));
+            let wSupport = (1 - clamped) * 100 + timePressure;
             let wTarget = clamped * 100;
-            let wSupport = (1 - clamped) * 100;
-            let wPrice = 45 + (1 - Math.abs(posRatio - 0.5) * 2) * 35;
+            let wPrice = 0;
+
+            if (wTarget === 0 && wSupport === 0) {
+                wTarget = 1; wSupport = 1; wPrice = 1;
+            } else {
+                let basePrice = Math.min(wTarget, wSupport);
+                if (basePrice === 0) {
+                    basePrice = Math.max(wTarget, wSupport) * 0.1;
+                }
+                wPrice = basePrice + ((1 - Math.abs(posRatio - 0.5) * 2) * 50);
+            }
 
             let totalMass = wTarget + wSupport + wPrice;
+            if (totalMass === 0) totalMass = 1;
+
             let targetX = (vTarget.x * wTarget + vSupport.x * wSupport + vPrice.x * wPrice) / totalMass;
             let targetY = (vTarget.y * wTarget + vSupport.y * wSupport + vPrice.y * wPrice) / totalMass;
 
