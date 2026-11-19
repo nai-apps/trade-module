@@ -23,9 +23,12 @@
         .btn-reset { background-color: #222; color: #00C875; border: 1px solid #00C875; padding: 10px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 4px; transition: all 0.2s; text-align: center; margin-top: 8px; font-size: 12px; }
         .btn-reset:hover { background-color: #00C875; color: #FFF; }
         .input-field { background: #111; border: 1px solid #444; color: #fff; font-family: inherit; padding: 4px 6px; width: 85px; text-align: right; border-radius: 4px; font-size: 13px; }
-        .input-price { border-color: #eab308; color: #eab308; font-weight: bold; }
+                .input-price { border-color: #eab308; color: #eab308; font-weight: bold; }
+        .input-text { background: #111; border: 1px solid #444; color: #00C875; font-family: inherit; padding: 4px 6px; border-radius: 4px; font-size: 13px; font-weight: bold; }
+        .input-note { background: #111; border: 1px solid #333; color: #aaa; font-family: inherit; padding: 4px 6px; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; margin-top: 6px; }
         @media (max-width: 600px) {
-            body { padding: 10px; }
+            body { padding: 10px 10px 45vh 10px; }
+
             .instruments-column, .canvas-box, .control-panel { width: 100%; min-width: 100%; box-sizing: border-box; }
             canvas { max-width: 100%; height: auto; }
         }
@@ -59,7 +62,15 @@
                     <span>Панель Управления</span>
                     <button id="lockBtn" onclick="toggleLock()" title="Блокировка границ коридора" style="background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 14px; line-height: 1;"></button>
                 </h2>
-                
+                                <!-- АКТИВ И ОПИСАНИЕ ДИАПАЗОНА -->
+                <div class="stats-box" style="border-left-color: #00C875;">
+                    <div class="stat-line">
+                        <span>Актив / Тикер:</span>
+                        <input type="text" id="cfgAsset" class="input-text" style="width: 120px; text-align: right;" placeholder="USD/RUB" onchange="updateFromInputs()">
+                    </div>
+                    <input type="text" id="cfgNote" class="input-note" placeholder="Описание коридора / идея..." onchange="updateFromInputs()">
+                </div>
+
                 <div class="stats-box" style="border-left-color: #00C875;">
                     <div class="interpretation" id="interpretText">Цена в центре коридора. Равновесие сил.</div>
                 </div>
@@ -408,11 +419,13 @@
             document.getElementById('valSector').innerText = sectorName;
             document.getElementById('interpretText').innerText = advice;
 
-            try {
+                        try {
                 localStorage.setItem('nai_trade1_price', price);
                 localStorage.setItem('nai_trade1_target', target);
                 localStorage.setItem('nai_trade1_support', support);
                 localStorage.setItem('nai_trade1_days', days);
+                localStorage.setItem('nai_trade1_asset', document.getElementById('cfgAsset').value || '');
+                localStorage.setItem('nai_trade1_note', document.getElementById('cfgNote').value || '');
             } catch (e) {}
 
             drawGyroscope(tiltAngle);
@@ -424,12 +437,15 @@
 
                 function renderLockState() {
             const btn = document.getElementById('lockBtn');
-            const inputs = [
+                        const inputs = [
+                document.getElementById('cfgAsset'),
+                document.getElementById('cfgNote'),
                 document.getElementById('cfgPrice'),
                 document.getElementById('cfgTarget'),
                 document.getElementById('cfgSupport'),
                 document.getElementById('cfgDays')
             ];
+
 
             inputs.forEach(inp => {
                 if (inp) {
@@ -497,12 +513,16 @@
             }
         }
 
-        function resetToCenter() {
+                function resetToCenter() {
+            document.getElementById('cfgAsset').value = "";
+            document.getElementById('cfgNote').value = "";
             document.getElementById('cfgPrice').value = "100";
             document.getElementById('cfgTarget').value = "120";
             document.getElementById('cfgSupport').value = "80";
             document.getElementById('cfgDays').value = "30";
             try {
+                localStorage.removeItem('nai_trade1_asset');
+                localStorage.removeItem('nai_trade1_note');
                 localStorage.removeItem('nai_trade1_price');
                 localStorage.removeItem('nai_trade1_target');
                 localStorage.removeItem('nai_trade1_support');
@@ -513,6 +533,7 @@
             } catch (e) {}
             recalculateAll();
         }
+
 
         function initApp() {
             try {
@@ -537,7 +558,23 @@
         });
         setInterval(() => syncCountdownDays(true), 60000);
 
+                try {
+            let sAsset = localStorage.getItem('nai_trade1_asset');
+            let sNote = localStorage.getItem('nai_trade1_note');
+            if (sAsset !== null) document.getElementById('cfgAsset').value = sAsset;
+            if (sNote !== null) document.getElementById('cfgNote').value = sNote;
+        } catch (e) {}
+
+        document.querySelectorAll('input').forEach(el => {
+            el.addEventListener('focus', () => {
+                if (window.innerWidth <= 600) {
+                    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+                }
+            });
+        });
+
         initApp();
+
     </script>
 </body>
 </html>
