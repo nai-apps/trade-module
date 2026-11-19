@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NAI_Trade v1.0 — Навигатор Позиции и Средней</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTQiIGZpbGw9IiMwRTBFMEUiIHN0cm9rZT0iIzM4YmRmOCIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0iTTIwIDE2djMyTTQ0IDE2djMyTTIwIDMyaDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzOGJkZjgiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTQiIGZpbGw9IiMwRTBFMEUiIHN0cm9rZT0iIzAwQzg3NSIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0iTTIwIDE2djMyTTQ0IDE2djMyTTIwIDMyaDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMEM4NzUiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+">
+
     <style>
         body { background-color: #0E0E0E; color: #D5D5D5; font-family: 'Courier New', Courier, monospace; padding: 15px; max-width: 900px; margin: 0 auto; user-select: none; }
-        h1, h2 { color: #38bdf8; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 5px; font-size: 18px; }
+        h1, h2 { color: #00C875; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 5px; font-size: 18px; }
         .subtitle { color: #666; font-size: 12px; margin-bottom: 18px; }
         .layout-grid { display: flex; gap: 20px; flex-wrap: wrap; }
         .instruments-column { display: flex; flex-direction: column; gap: 15px; align-items: center; }
@@ -15,12 +16,12 @@
         .canvas-title { font-size: 11px; color: #888; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
         canvas { background-color: #111; border-radius: 4px; cursor: default; }
         .control-panel { flex: 1; min-width: 300px; background-color: #141414; border: 2px solid #333; border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: space-between; }
-        .stats-box { background-color: #1A1A1A; border-left: 4px solid #38bdf8; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .stats-box { background-color: #1A1A1A; border-left: 4px solid #00C875; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
         .stat-line { margin: 6px 0; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
         .value { color: #FFF; font-weight: bold; }
         .interpretation { font-size: 13px; color: #D5D5D5; line-height: 1.4; }
-        .btn-reset { background-color: #222; color: #38bdf8; border: 1px solid #38bdf8; padding: 10px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 4px; transition: all 0.2s; text-align: center; margin-top: 8px; font-size: 12px; }
-        .btn-reset:hover { background-color: #38bdf8; color: #FFF; }
+        .btn-reset { background-color: #222; color: #00C875; border: 1px solid #00C875; padding: 10px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 4px; transition: all 0.2s; text-align: center; margin-top: 8px; font-size: 12px; }
+        .btn-reset:hover { background-color: #00C875; color: #FFF; }
         .input-field { background: #111; border: 1px solid #444; color: #fff; font-family: inherit; padding: 4px 6px; width: 85px; text-align: right; border-radius: 4px; font-size: 13px; }
         .input-price { border-color: #eab308; color: #eab308; font-weight: bold; }
         @media (max-width: 600px) {
@@ -36,7 +37,7 @@
 
     <div class="layout-grid">
         <div class="instruments-column">
-            <div class="canvas-box" style="border-color: #38bdf8;">
+            <div class="canvas-box" style="border-color: #00C875;">
                 <div class="canvas-title">1. Авиагоризонт Коридора (Цена / Время)</div>
                 <canvas id="gyroCanvas" width="260" height="260"></canvas>
             </div>
@@ -59,7 +60,7 @@
                     <button id="lockBtn" onclick="toggleLock()" title="Блокировка границ коридора" style="background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 14px; line-height: 1;"></button>
                 </h2>
                 
-                <div class="stats-box" style="border-left-color: #38bdf8;">
+                <div class="stats-box" style="border-left-color: #00C875;">
                     <div class="interpretation" id="interpretText">Цена в центре коридора. Равновесие сил.</div>
                 </div>
 
@@ -152,7 +153,7 @@
             gCtx.beginPath();
             gCtx.moveTo(-radius + 15, 0);
             gCtx.lineTo(radius - 15, 0);
-            gCtx.strokeStyle = tiltAngle < -0.02 ? '#ef4444' : (tiltAngle > 0.02 ? '#22c55e' : '#38bdf8');
+            gCtx.strokeStyle = tiltAngle < -0.02 ? '#ef4444' : (tiltAngle > 0.02 ? '#22c55e' : '#00C875');
             gCtx.lineWidth = 3;
             gCtx.stroke();
 
@@ -177,7 +178,7 @@
 
             gCtx.beginPath();
             gCtx.arc(0, 0, 5, 0, 2 * Math.PI);
-            gCtx.fillStyle = '#38bdf8';
+            gCtx.fillStyle = '#00C875';
             gCtx.fill();
 
             gCtx.restore();
@@ -237,7 +238,7 @@
             bCtx.arc(pX, pY, 7, 0, 2 * Math.PI);
             bCtx.fillStyle = '#FFF';
             bCtx.shadowBlur = 10;
-            bCtx.shadowColor = '#38bdf8';
+            bCtx.shadowColor = '#00C875';
             bCtx.fill();
             bCtx.shadowBlur = 0;
         }
@@ -295,7 +296,7 @@
             });
             sCtx.stroke();
 
-            sCtx.strokeStyle = '#38bdf8';
+            sCtx.strokeStyle = '#00C875';
             sCtx.lineWidth = 2.5;
             sCtx.beginPath();
             smaList.forEach((v, idx) => {
@@ -306,7 +307,7 @@
 
             let lastX = getX(smaList.length - 1);
             let lastY = getY(smaList[smaList.length - 1]);
-            sCtx.fillStyle = '#38bdf8';
+            sCtx.fillStyle = '#00C875';
             sCtx.beginPath();
             sCtx.arc(lastX, lastY, 4, 0, Math.PI * 2);
             sCtx.fill();
