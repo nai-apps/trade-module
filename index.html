@@ -101,14 +101,16 @@
                 </div>
             </div>
             
-            <div id="btnReset" class="btn-reset" onclick="confirmReset()">СБРОС КОРИДОРА И ИСТОРИИ</div>
+                        <div id="btnReset" class="btn-reset" onclick="confirmReset()">СБРОС КОРИДОРА И ИСТОРИИ</div>
+        </div>
+
+        <div style="grid-column: 1 / -1; display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #222; width:100%;">
+            <button onclick="exportTradeBackup()" style="flex:1; background:#141414; color:#00C875; border:1px solid #262626; border-radius:6px; padding:8px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬇ СКАЧАТЬ БЭКАП</button>
+            <button onclick="document.getElementById('tradeBackupFile').click()" style="flex:1; background:#141414; color:#38bdf8; border:1px solid #262626; border-radius:6px; padding:8px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬆ ЗАГРУЗИТЬ БЭКАП</button>
+            <input type="file" id="tradeBackupFile" accept=".json" style="display:none;" onchange="importTradeBackup(event)">
         </div>
     </div>
-        <div style="display:flex; gap:8px; justify-content:center; margin:12px auto 6px; max-width:360px;">
-        <button onclick="exportTradeBackup()" style="flex:1; background:#141414; color:#00C875; border:1px solid #262626; border-radius:6px; padding:7px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬇ СКАЧАТЬ БЭКАП</button>
-        <button onclick="document.getElementById('tradeBackupFile').click()" style="flex:1; background:#141414; color:#38bdf8; border:1px solid #262626; border-radius:6px; padding:7px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬆ ЗАГРУЗИТЬ БЭКАП</button>
-        <input type="file" id="tradeBackupFile" accept=".json" style="display:none;" onchange="importTradeBackup(event)">
-    </div>
+
 
     <script>
         const gyroCanvas = document.getElementById('gyroCanvas');
