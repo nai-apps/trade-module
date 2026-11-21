@@ -513,7 +513,7 @@
             }
         }
 
-                function resetToCenter() {
+                        function resetToCenter() {
             document.getElementById('cfgAsset').value = "";
             document.getElementById('cfgNote').value = "";
             document.getElementById('cfgPrice').value = "100";
@@ -530,9 +530,12 @@
                 localStorage.removeItem('nai_trade1_days_base');
                 localStorage.removeItem('nai_trade1_days_start');
                 localStorage.removeItem('nai_trade1_sma_hist');
+                localStorage.setItem('nai_trade1_days_base', 30);
+                localStorage.setItem('nai_trade1_days_start', Date.now());
             } catch (e) {}
             recalculateAll();
         }
+
 
 
         function initApp() {
