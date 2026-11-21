@@ -104,6 +104,12 @@
             <div id="btnReset" class="btn-reset" onclick="confirmReset()">СБРОС КОРИДОРА И ИСТОРИИ</div>
         </div>
     </div>
+        <div style="display:flex; gap:8px; justify-content:center; margin:12px auto 6px; max-width:360px;">
+        <button onclick="exportTradeBackup()" style="flex:1; background:#141414; color:#00C875; border:1px solid #262626; border-radius:6px; padding:7px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬇ СКАЧАТЬ БЭКАП</button>
+        <button onclick="document.getElementById('tradeBackupFile').click()" style="flex:1; background:#141414; color:#38bdf8; border:1px solid #262626; border-radius:6px; padding:7px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬆ ЗАГРУЗИТЬ БЭКАП</button>
+        <input type="file" id="tradeBackupFile" accept=".json" style="display:none;" onchange="importTradeBackup(event)">
+    </div>
+
     <script>
         const gyroCanvas = document.getElementById('gyroCanvas');
         const gCtx = gyroCanvas.getContext('2d');
@@ -575,6 +581,57 @@
                 }
             });
         });
+
+                function exportTradeBackup() {
+            const keys = [
+                'nai_trade1_asset', 'nai_trade1_note',
+                'nai_trade1_price', 'nai_trade1_target', 'nai_trade1_support',
+                'nai_trade1_days', 'nai_trade1_days_base', 'nai_trade1_days_start',
+                'nai_trade1_sma_hist', 'nai_trade1_locked'
+            ];
+            let data = { module: 'NAI_TRADE_V1', exportedAt: new Date().toISOString(), storage: {} };
+            keys.forEach(k => {
+                let v = localStorage.getItem(k);
+                if (v !== null) data.storage[k] = v;
+            });
+            let blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'nai-trade-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importTradeBackup(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let parsed = JSON.parse(e.target.result);
+                    if (!parsed || parsed.module !== 'NAI_TRADE_V1' || !parsed.storage) {
+                        alert('Ошибка: выбран неверный файл резервной копии Биржевого модуля.');
+                        return;
+                    }
+                    Object.keys(parsed.storage).forEach(k => {
+                        localStorage.setItem(k, parsed.storage[k]);
+                    });
+                    if (parsed.storage['nai_trade1_asset'] !== undefined) {
+                        document.getElementById('cfgAsset').value = parsed.storage['nai_trade1_asset'];
+                    }
+                    if (parsed.storage['nai_trade1_note'] !== undefined) {
+                        document.getElementById('cfgNote').value = parsed.storage['nai_trade1_note'];
+                    }
+                    alert('Резервная копия Биржевого модуля успешно восстановлена!');
+                    initApp();
+                } catch (err) {
+                    alert('Ошибка чтения файла резервной копии.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
 
         initApp();
 
