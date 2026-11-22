@@ -110,12 +110,12 @@
                         <div id="btnReset" class="btn-reset" onclick="confirmReset()">СБРОС КОРИДОРА И ИСТОРИИ</div>
         </div>
 
-        <div style="grid-column: 1 / -1; display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #222; width:100%;">
-            <button onclick="exportTradeBackup()" style="flex:1; background:#141414; color:#00C875; border:1px solid #262626; border-radius:6px; padding:8px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬇ СКАЧАТЬ БЭКАП</button>
-            <button onclick="document.getElementById('tradeBackupFile').click()" style="flex:1; background:#141414; color:#38bdf8; border:1px solid #262626; border-radius:6px; padding:8px 10px; font-size:11px; font-family:inherit; cursor:pointer;">⬆ ЗАГРУЗИТЬ БЭКАП</button>
+                <div class="backup-bar">
+            <button class="btn-backup-left" onclick="exportTradeBackup()">⬇ СКАЧАТЬ БЭКАП</button>
+            <button class="btn-backup-right" onclick="document.getElementById('tradeBackupFile').click()">⬆ ЗАГРУЗИТЬ БЭКАП</button>
             <input type="file" id="tradeBackupFile" accept=".json" style="display:none;" onchange="importTradeBackup(event)">
         </div>
-    </div>
+
 
 
     <script>
