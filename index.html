@@ -26,13 +26,19 @@
                 .input-price { border-color: #eab308; color: #eab308; font-weight: bold; }
         .input-text { background: #111; border: 1px solid #444; color: #00C875; font-family: inherit; padding: 4px 6px; border-radius: 4px; font-size: 13px; font-weight: bold; }
         .input-note { background: #111; border: 1px solid #333; color: #aaa; font-family: inherit; padding: 4px 6px; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; margin-top: 6px; }
+                .backup-bar { display: flex; gap: 20px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #222; width: 100%; box-sizing: border-box; }
+        .btn-backup-left { width: 280px; flex-shrink: 0; background: #141414; color: #00C875; border: 1px solid #262626; border-radius: 6px; padding: 8px 10px; font-size: 11px; font-family: inherit; cursor: pointer; box-sizing: border-box; }
+        .btn-backup-right { flex: 1; background: #141414; color: #38bdf8; border: 1px solid #262626; border-radius: 6px; padding: 8px 10px; font-size: 11px; font-family: inherit; cursor: pointer; box-sizing: border-box; }
         @media (max-width: 600px) {
             body { padding: 10px 10px 45vh 10px; }
 
             .instruments-column, .canvas-box, .control-panel { width: 100%; min-width: 100%; box-sizing: border-box; }
             canvas { max-width: 100%; height: auto; }
+            .backup-bar { gap: 8px; }
+            .btn-backup-left { width: auto; flex: 1; }
         }
     </style>
+
 </head>
 <body>
         <h1>NAI: БИРЖЕВОЙ МОДУЛЬ v1.2</h1>
