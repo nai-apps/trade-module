@@ -255,8 +255,8 @@
             bCtx.beginPath(); bCtx.moveTo(pX, pY); bCtx.lineTo(vSupport.x, vSupport.y); bCtx.strokeStyle = '#ef4444'; bCtx.stroke();
             bCtx.beginPath(); bCtx.moveTo(pX, pY); bCtx.lineTo(vTarget.x, vTarget.y); bCtx.strokeStyle = '#22c55e'; bCtx.stroke();
 
-            bCtx.font = "bold 10px Courier New";
-            bCtx.fillStyle = '#eab308'; bCtx.fillText(' ЦЕНА (Я)', cX - 30, 14);
+                                    bCtx.font = "bold 10px Courier New";
+            bCtx.fillStyle = '#eab308'; bCtx.fillText(' ИМПУЛЬС', cX - 30, 14);
             bCtx.fillStyle = '#ef4444'; bCtx.fillText(' ПОДДЕРЖКА', 10, balCanvas.height - 8);
             bCtx.fillStyle = '#22c55e'; bCtx.fillText(' ЦЕЛЬ', balCanvas.width - 52, balCanvas.height - 8);
 
@@ -378,26 +378,33 @@
                 timePressure = Math.abs(norm) * 100 * urgency * 1.6;
             }
 
+                        let smaImpulseWeight = 0;
+            try {
+                let todayStr = new Date().toISOString().slice(0, 10);
+                let hist = JSON.parse(localStorage.getItem('nai_trade1_sma_hist') || '[]');
+                let tempHist = hist.slice();
+                if (tempHist.length > 0 && tempHist[tempHist.length - 1].date === todayStr) {
+                    tempHist[tempHist.length - 1].val = price;
+                } else {
+                    tempHist.push({ date: todayStr, val: price });
+                }
+                let slice3 = tempHist.slice(-3);
+                let sma3 = slice3.reduce((acc, item) => acc + item.val, 0) / slice3.length;
+                                let deviationRatio = Math.abs(price - sma3) / span;
+                smaImpulseWeight = Math.min(1500, Math.pow(deviationRatio * 4.5, 1.6) * 280);
+
+            } catch (e) {}
+
             let clamped = Math.max(0, Math.min(1, posRatio));
             let wSupport = (1 - clamped) * 100 + timePressure;
             let wTarget = clamped * 100;
-            let wPrice = 0;
+            let wImpulse = 12 + smaImpulseWeight;
 
-            if (wTarget === 0 && wSupport === 0) {
-                wTarget = 1; wSupport = 1; wPrice = 1;
-            } else {
-                let basePrice = Math.min(wTarget, wSupport);
-                if (basePrice === 0) {
-                    basePrice = Math.max(wTarget, wSupport) * 0.1;
-                }
-                wPrice = basePrice + ((1 - Math.abs(posRatio - 0.5) * 2) * 50);
-            }
-
-            let totalMass = wTarget + wSupport + wPrice;
+            let totalMass = wTarget + wSupport + wImpulse;
             if (totalMass === 0) totalMass = 1;
 
-            let targetX = (vTarget.x * wTarget + vSupport.x * wSupport + vPrice.x * wPrice) / totalMass;
-            let targetY = (vTarget.y * wTarget + vSupport.y * wSupport + vPrice.y * wPrice) / totalMass;
+            let targetX = (vTarget.x * wTarget + vSupport.x * wSupport + vPrice.x * wImpulse) / totalMass;
+            let targetY = (vTarget.y * wTarget + vSupport.y * wSupport + vPrice.y * wImpulse) / totalMass;
 
             const dist = Math.hypot(targetX - cX, targetY - cY);
             if (dist <= radius - 8) {
@@ -409,7 +416,7 @@
             }
 
             let sectorName = "ЦЕНТР (БАЛАНС)";
-            let advice = "Цена в середине коридора. Наблюдаем за смещением средней (SMA).";
+            let advice = "Спокойный ход внутри коридора. Отрыва от средней (SMA) нет.";
 
             if (price < support) {
                 sectorName = "ПРОБОЙ ПОДДЕРЖКИ";
@@ -420,16 +427,17 @@
             } else if (dist > 10) {
                 let deg = Math.atan2(pY - cY, pX - cX) * (180 / Math.PI);
                 if (deg >= -150 && deg < -30) {
-                    sectorName = "ЗОНА РАВНОВЕСИЯ (ЦЕНА)";
-                    advice = "Консолидация в рабочей зоне. Без резких движений, ждём вектор SMA.";
+                    sectorName = "ЗОНА ИМПУЛЬСА (ОТРЫВ ОТ SMA)";
+                    advice = "Резкое ускорение и отрыв цены от средней (SMA-3). Возможна пауза или откат к средней.";
                 } else if (deg >= -30 && deg < 90) {
                     sectorName = "ЗОНА РОСТА (К ЦЕЛИ)";
-                    advice = "Покупатели контролируют коридор. Цена уверенно движется к Цели.";
+                    advice = "Цена плавно движется к Цели без критического перегрева от средней.";
                 } else {
                     sectorName = "ЗОНА ДАВЛЕНИЯ (ПОДДЕРЖКА)";
                     advice = "Цена прижата к нижней границе. Время до события работает против позиции.";
                 }
             }
+
 
             document.getElementById('valSector').innerText = sectorName;
             document.getElementById('interpretText').innerText = advice;
